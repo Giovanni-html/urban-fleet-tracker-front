@@ -1,0 +1,49 @@
+<svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    
+    <linearGradient id="accentGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+       <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+       <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+       </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer Tech Ring -->
+  <path
+    d="M50 15 C 69.3 15 85 30.7 85 50 C 85 69.3 69.3 85 50 85 C 30.7 85 15 69.3 15 50"
+    stroke="url(#mainGrad)"
+    stroke-width="6"
+    stroke-linecap="round"
+    filter="url(#softGlow)"
+  />
+
+  <!-- Inner Fleet Arrow -->
+  <path
+    d="M35 65 L 50 25 L 65 65 L 50 55 L 35 65 Z"
+    fill="url(#accentGrad)"
+    stroke="white"
+    stroke-width="2"
+    stroke-linejoin="round"
+    filter="url(#softGlow)"
+  />
+
+  <!-- Decorative Dot -->
+  <circle
+    cx="15" 
+    cy="50" 
+    r="4" 
+    fill="#3b82f6"
+    filter="url(#softGlow)"
+  />
+</svg>

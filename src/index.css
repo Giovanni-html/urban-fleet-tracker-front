@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-white min-h-screen overflow-hidden;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03); /* Optimized for dark mode (0.08 is too bright) */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 0 38px 19px rgba(255, 255, 255, 0.02);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .glass-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.4),
+      transparent,
+      rgba(255, 255, 255, 0.1)
+    );
+    pointer-events: none;
+  }
+  
+  .glass-panel-hover {
+    @apply hover:bg-slate-800/60 hover:border-cyan-500/30 transition-all duration-300;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Mapbox Control Overrides for Glassmorphism + Squishy Effect */
+.mapboxgl-ctrl-group {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column;
+  gap: 8px; /* Reduced gap */
+}
+
+/* Individual Squishy Buttons */
+.mapboxgl-ctrl-group button {
+  @apply !bg-slate-900/80 !backdrop-blur-xl !border !border-white/10 !text-white;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  /* The "Squishy" Depth */
+  box-shadow: 0 6px 0 #020617 !important; 
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 !important; /* Reset default margins */
+}
+
+.mapboxgl-ctrl-group button:hover {
+  /* Pressing down effect */
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #020617 !important;
+  /* No color change, just physical movement */
+}
+
+.mapboxgl-ctrl-group button:active {
+  /* Full press */
+  transform: translateY(6px);
+  box-shadow: none !important;
+}
+
+.mapboxgl-ctrl-icon {
+  filter: invert(1) brightness(2);
+  scale: 0.8;
+}
+
+/* Remove default focus outline */
+.mapboxgl-ctrl-group button:focus {
+  outline: none;
+}
+/* ===== Sidebar Glider Navigation ===== */
+.nav-radio-container {
+  --main-color: #00FFFF; /* Cyan Neon */
+  --main-color-opacity: rgba(0, 255, 255, 0.1);
+  --item-height: 54px; /* Fixed height: padding (12px * 2) + icon (30px) */
+
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 0;
+  width: 100%;
+}
+
+.nav-radio-container .glider-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(30, 30, 30, 0.8) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  width: 2px;
+  pointer-events: none;
+}
+
+.nav-radio-container .glider-container .glider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: var(--item-height);
+  width: 100%;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0%,
+    var(--main-color) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  transition: top 0.4s cubic-bezier(0.37, 1.95, 0.66, 0.56);
+}
+
+.nav-radio-container .glider-container .glider::before {
+  content: "";
+  position: absolute;
+  height: 50%;
+  width: 400%;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  background: var(--main-color);
+  filter: blur(12px);
+  opacity: 0.5;
+}
+
+.nav-radio-container .glider-container .glider::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 60px;
+  background: linear-gradient(
+    90deg,
+    var(--main-color-opacity) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.nav-radio-container .nav-item {
+  cursor: pointer;
+  height: var(--item-height);
+  position: relative;
+  color: #64748b; /* slate-500 */
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-radio-container .nav-item.active {
+  color: var(--main-color);
+}
+
+.nav-radio-container .nav-item .icon-wrapper {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-radio-container .nav-item.active .icon-wrapper {
+  /* Only glider effect - no background */
+}
+
+.nav-radio-container .nav-item:hover:not(.active) {
+  /* Subtle glow on SVG icons */
+  filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.4));
+  color: #e2e8f0; /* slate-200 */
+}
+
+/* Glider position using top instead of transform for precise alignment */
+.nav-radio-container[data-active="0"] .glider { top: 0; }
+.nav-radio-container[data-active="1"] .glider { top: var(--item-height); }
+.nav-radio-container[data-active="2"] .glider { top: calc(var(--item-height) * 2); }
+.nav-radio-container[data-active="3"] .glider { top: calc(var(--item-height) * 3); }
+.nav-radio-container[data-active="4"] .glider { top: calc(var(--item-height) * 4); }
+.nav-radio-container[data-active="5"] .glider { top: calc(var(--item-height) * 5); }
