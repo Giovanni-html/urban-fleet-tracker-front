@@ -8,6 +8,7 @@ import { UnitList } from './components/UnitList';
 import { FleetMap3D } from './components/FleetMap3D';
 import { Search, Bell, Scan } from 'lucide-react';
 import { LoadingScreen } from './components/LoadingScreen';
+import { SettingsView } from './components/SettingsView';
 
 // Inner component that uses the context
 function AppContent() {
@@ -132,15 +133,9 @@ function AppContent() {
             </GlassPane>
           )}
 
-          {/* Settings View - Placeholder */}
+          {/* Settings View - Hazard Zones Management */}
           {activeView === 'settings' && (
-            <GlassPane className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Settings</h2>
-                <p className="text-slate-400">Configure your fleet tracker</p>
-                <p className="text-slate-500 text-sm mt-4">Coming soon...</p>
-              </div>
-            </GlassPane>
+            <SettingsView />
           )}
         </DashboardLayout>
       </div>
