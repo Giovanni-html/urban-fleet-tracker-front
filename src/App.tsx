@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { FleetProvider, useFleet } from './context/FleetContext';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { GlassPane } from './components/GlassPane';
 import { Sidebar } from './components/Sidebar';
-import { StatCard } from './components/StatCard';
-import { UnitList } from './components/UnitList';
-import { FleetMap3D } from './components/FleetMap3D';
 import { Search, Bell, Scan } from 'lucide-react';
 import { LoadingScreen } from './components/LoadingScreen';
-import { SettingsView } from './components/SettingsView';
+import { 
+  DashboardPage, 
+  AnalyticsPage, 
+  ActivityPage, 
+  WeatherPage, 
+  SettingsPage 
+} from './pages';
 
 // Inner component that uses the context
 function AppContent() {
-  const { units, searchQuery, setSearchQuery, activeView } = useFleet();
+  const { searchQuery, setSearchQuery } = useFleet();
   const [isLoading, setIsLoading] = useState(true);
 
   // Fixed 2.5 second loading screen
@@ -63,92 +67,28 @@ function AppContent() {
             </div>
           }
         >
-          {/* Dashboard View */}
-          {activeView === 'dashboard' && (
-            <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 h-full pb-[70px]">
-              {/* Left Panel: Active Units */}
-              <div className="col-span-1 lg:col-span-3 h-full min-h-0">
-                <UnitList />
-              </div>
-
-              {/* Right Panel: Map & Stats */}
-              <div className="col-span-1 lg:col-span-7 h-full min-h-0 relative">
-                 {/* Stats Overlay */}
-                 <div className="absolute top-px right-4 z-50 w-full max-w-[500px] grid grid-cols-2 md:grid-cols-3 gap-3 pointer-events-none">
-                    <div className="pointer-events-auto contents">
-                        <StatCard 
-                            title="Active Units" 
-                            value={units.length.toString()} 
-                            change={units.length.toString()} 
-                            trend="up" 
-                            variant="bar" 
-                            chartData={[12, 14, 13, 15, 16, 14, 15]}
-                        />
-                        <StatCard 
-                            title="Avg Response" 
-                            value="3m 45s" 
-                            change="12%" 
-                            trend="down" 
-                            variant="bar" 
-                            chartData={[45, 42, 48, 40, 38, 35, 42]}
-                        />
-                        <StatCard 
-                            title="Incidents" 
-                            value="12" 
-                            change="12" 
-                            trend="up" 
-                            variant="bar" 
-                            chartData={[5, 8, 3, 12, 6, 9, 12]}
-                        />
-                    </div>
-                 </div>
-                 
-                 {/* Map Area */}
-                 <GlassPane className="h-[calc(100%-25px)] mt-[25px] w-full relative border-slate-800/60 bg-slate-900/80 overflow-hidden p-0">
-                    <FleetMap3D />
-                 </GlassPane>
-              </div>
-            </div>
-          )}
-
-          {/* Activity View - Placeholder */}
-          {activeView === 'activity' && (
-            <GlassPane className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Activity Log</h2>
-                <p className="text-slate-400">Recent fleet activity and events</p>
-                <p className="text-slate-500 text-sm mt-4">Coming soon...</p>
-              </div>
-            </GlassPane>
-          )}
-
-          {/* Weather View - Placeholder */}
-          {activeView === 'weather' && (
-            <GlassPane className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Weather Conditions</h2>
-                <p className="text-slate-400">Weather data for fleet operations</p>
-                <p className="text-slate-500 text-sm mt-4">Coming soon...</p>
-              </div>
-            </GlassPane>
-          )}
-
-          {/* Settings View - Hazard Zones Management */}
-          {activeView === 'settings' && (
-            <SettingsView />
-          )}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/activity" element={<ActivityPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/weather" element={<WeatherPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
         </DashboardLayout>
       </div>
     </>
   );
 }
 
-// Main App wrapped with Provider
+// Main App wrapped with Provider and Router
 function App() {
   return (
-    <FleetProvider>
-      <AppContent />
-    </FleetProvider>
+    <BrowserRouter>
+      <FleetProvider>
+        <AppContent />
+      </FleetProvider>
+    </BrowserRouter>
   );
 }
 

@@ -3,7 +3,7 @@ import { mockUnits, type Unit } from '../data/mockUnits';
 import { neighborhoodsApi, hazardZonesApi, type Neighborhood, type HazardZone } from '../services/api';
 
 // Types
-export type ViewType = 'dashboard' | 'activity' | 'weather' | 'settings';
+export type ViewType = 'dashboard' | 'activity' | 'analytics' | 'weather' | 'settings';
 
 interface FleetContextType {
   // Data

@@ -36,6 +36,11 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
   const keysPressed = useRef<Set<string>>(new Set());
   const animationFrameRef = useRef<number | null>(null);
   
+  // Interpolation State - for smooth position updates
+  const vehicleTargetsRef = useRef<Map<string, {lat: number, lng: number, bearing: number}>>(new Map());
+  const vehicleDisplayRef = useRef<Map<string, {lat: number, lng: number, bearing: number}>>(new Map());
+  const interpolationFrameRef = useRef<number | null>(null);
+  
   const [isMapReady, setIsMapReady] = useState(false);
   const { neighborhoods, hazardZones } = useFleet();
 
@@ -240,6 +245,7 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
             0, // Hide if tracked
             12 // Default large glow
           ],
+          'circle-radius-transition': { duration: 300 },
           'circle-color': ['get', 'color'],
           'circle-opacity': 0.4,
           'circle-blur': 0.5
@@ -258,6 +264,7 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
             0, // Hide if tracked
             6 // Larger core
           ],
+          'circle-radius-transition': { duration: 300 },
           'circle-color': ['get', 'color'],
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff'
@@ -288,7 +295,8 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
             ['==', ['get', 'isTracked'], true],
             1, // Show if tracked
             0  // Hide otherwise
-          ]
+          ],
+          'text-opacity-transition': { duration: 300 }
         }
       });
 
@@ -314,9 +322,9 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
           const coordinates = (feature.geometry as any).coordinates.slice();
           map.flyTo({
             center: coordinates,
-            zoom: 19,
-            speed: 2.0,
-            pitch: 60
+            zoom: 21,
+            duration: 600, // Fixed 600ms animation regardless of distance
+            pitch: 65
           });
           
           // Show popup
@@ -336,49 +344,75 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
         webSocketFactory: () => socket,
         reconnectDelay: 5000,
         onConnect: () => {
-          console.log('✅ Connected to WebSocket - Switching to GL Layers');
+          console.log('✅ Connected to WebSocket - Using Interpolation');
           stompClient.subscribe('/topic/vehicles', (message) => {
             if (!message.body) return;
             const updates = JSON.parse(message.body);
             
-            // Should we update focus?
-            const followedId = followingUnitIdRef.current;
-            let followTarget: any = null;
-            
-            // DEBUG LOGGING
-            if (followedId) {
-                // Check if we are receiving updates for the followed unit
-                const found = updates.find((u: any) => u.id === followedId);
-                if (!found) {
-                    console.warn(`⚠️ Tracking ${followedId} but no update received in this batch!`);
-                } else {
-                   // console.log(`✅ Tracking ${followedId} - Update received. Lat: ${found.lat}`);
-                }
-            }
-
-            // Map updates to GeoJSON
-            const features = updates.map((update: any) => {
-              // Find static info for this unit (color, type)
-              const unitStatic = mockUnits.find(u => u.id === update.id);
-              const color = unitStatic?.type === 'PATROL' ? '#00FFFF' : '#FF4444';
+            // Store target positions from server (NOT display positions)
+            updates.forEach((update: any) => {
+              vehicleTargetsRef.current.set(update.id, {
+                lat: update.lat,
+                lng: update.lng,
+                bearing: update.bearing || 0
+              });
               
-              const isFollowed = String(update.id) === String(followedId);
-              if (isFollowed) {
-                followTarget = update;
+              // Initialize display position if first time seeing this vehicle
+              if (!vehicleDisplayRef.current.has(update.id)) {
+                vehicleDisplayRef.current.set(update.id, {
+                  lat: update.lat,
+                  lng: update.lng,
+                  bearing: update.bearing || 0
+                });
               }
-
+            });
+          });
+          
+          // === INTERPOLATION LOOP ===
+          const LERP_FACTOR = 0.15; // Smoothing factor (0-1, lower = smoother but slower)
+          
+          const runInterpolation = () => {
+            const followedId = followingUnitIdRef.current;
+            let followTarget: {lat: number, lng: number, bearing: number} | null = null;
+            
+            // Lerp each vehicle's display position toward its target
+            vehicleTargetsRef.current.forEach((target, id) => {
+              const display = vehicleDisplayRef.current.get(id);
+              if (!display) return;
+              
+              // Linear interpolation
+              display.lat += (target.lat - display.lat) * LERP_FACTOR;
+              display.lng += (target.lng - display.lng) * LERP_FACTOR;
+              
+              // Bearing interpolation (handle wrap-around at 360)
+              let bearingDiff = target.bearing - display.bearing;
+              if (bearingDiff > 180) bearingDiff -= 360;
+              if (bearingDiff < -180) bearingDiff += 360;
+              display.bearing += bearingDiff * LERP_FACTOR;
+              
+              if (String(id) === String(followedId)) {
+                followTarget = display;
+              }
+            });
+            
+            // Build GeoJSON from display positions
+            const features = Array.from(vehicleDisplayRef.current.entries()).map(([id, pos]) => {
+              const unitStatic = mockUnits.find(u => u.id === id);
+              const color = unitStatic?.type === 'PATROL' ? '#00FFFF' : '#FF4444';
+              const isFollowed = String(id) === String(followedId);
+              
               return {
                 type: 'Feature',
                 properties: {
-                  id: update.id,
+                  id: id,
                   type: unitStatic?.type || 'UNKNOWN',
                   color: color,
-                  bearing: update.bearing || 0,
-                  isTracked: isFollowed // Crucial for toggling layers
+                  bearing: pos.bearing,
+                  isTracked: isFollowed
                 },
                 geometry: {
                   type: 'Point',
-                  coordinates: [update.lng, update.lat]
+                  coordinates: [pos.lng, pos.lat]
                 }
               };
             });
@@ -393,17 +427,22 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
               source.setData(vehiclesGeoJSON as any);
             }
             
-            // Update Camera if following
+            // Update Camera if following (use smoothed position)
             if (followTarget && mapRef.current) {
                mapRef.current.easeTo({
                  center: [followTarget.lng, followTarget.lat],
                  bearing: followTarget.bearing, 
-                 pitch: 60, // Ensure pitch stays for 3D effect
-                 duration: 100, 
+                 pitch: 60,
+                 duration: 50, // Short duration for smooth following
                  easing: (t) => t
                });
             }
-          });
+            
+            interpolationFrameRef.current = requestAnimationFrame(runInterpolation);
+          };
+          
+          // Start interpolation loop
+          interpolationFrameRef.current = requestAnimationFrame(runInterpolation);
         }
       });
       
@@ -417,6 +456,10 @@ export const FleetMap3D = ({ onMapLoad }: FleetMap3DProps) => {
     });
 
     return () => {
+      // Cancel interpolation loop
+      if (interpolationFrameRef.current) {
+        cancelAnimationFrame(interpolationFrameRef.current);
+      }
       if (stompClientRef.current) {
         stompClientRef.current.deactivate();
       }

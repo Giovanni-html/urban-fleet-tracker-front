@@ -1,9 +1,27 @@
-import { Car, Ambulance, MoreHorizontal } from 'lucide-react';
+import { useState } from 'react';
+import { Car, Ambulance, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassPane, cn } from './GlassPane';
 import { useFleet } from '../context/FleetContext';
 
+const ITEMS_PER_PAGE = 7;
+
 export const UnitList = () => {
   const { filteredUnits } = useFleet();
+  const [currentPage, setCurrentPage] = useState(0);
+  
+  const totalPages = Math.ceil(filteredUnits.length / ITEMS_PER_PAGE);
+  const paginatedUnits = filteredUnits.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
+  
+  const goToNextPage = () => {
+    if (currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
+  };
+  
+  const goToPrevPage = () => {
+    if (currentPage > 0) setCurrentPage(currentPage - 1);
+  };
   
   return (
     <GlassPane className="h-full flex flex-col p-6">
@@ -17,9 +35,9 @@ export const UnitList = () => {
         <div className="col-span-2 text-right">Location</div>
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide space-y-3 -mx-2 px-2">
-        {filteredUnits.map((unit, idx) => (
+      {/* List (No scroll, paginated) */}
+      <div className="flex-1 space-y-3 -mx-2 px-2">
+        {paginatedUnits.map((unit, idx) => (
           <div 
             key={`${unit.id}-${idx}`}
             className="group grid grid-cols-12 items-center p-4 rounded-xl hover:bg-white/5 transition-all duration-200 cursor-pointer border border-transparent hover:border-white/5 bg-white/[0.02]"
@@ -62,6 +80,33 @@ export const UnitList = () => {
           </div>
         ))}
       </div>
+      
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/10">
+          <button 
+            onClick={goToPrevPage}
+            disabled={currentPage === 0}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={14} />
+            Anterior
+          </button>
+          
+          <span className="text-xs text-slate-500">
+            {currentPage + 1} / {totalPages}
+          </span>
+          
+          <button 
+            onClick={goToNextPage}
+            disabled={currentPage >= totalPages - 1}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            Próximo
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
     </GlassPane>
   );
 };
